@@ -15,7 +15,24 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.http import HttpResponse, JsonResponse
+import json
+
+spendingsArray = [{'description': 'Mango', 'amount': '12', 'spent_at': '2022-02-23T14:47:20.381Z', 'currency': 'USD'}]
+
+def spendings(request):
+    if request.method == 'POST':
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        if body['description'] and body['amount'] and body['spent_at'] and body['currency']:
+            spendingsArray.append(body)
+            return HttpResponse(status=201)
+        else:
+            return HttpResponse(status=400)
+    else:
+        return JsonResponse(spendingsArray, safe = False)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('spendings/', spendings),
 ]

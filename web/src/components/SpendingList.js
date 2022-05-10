@@ -11,14 +11,14 @@ import {
   AmountWrapper,
 } from "../styles/ComponentStyles";
 
-export default function SpendingList({ spendings, setSpendings }) {
+export default function SpendingList({ filter, currency, spendings, setSpendings, updatedForm }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:8000/spendings`, {
-      method: "GET",
+    fetch(`http://localhost:8080/spendings/`, {
+      method: 'GET',
       headers: { "Content-Type": "application/json" },
     })
       .then(async (res) => {
@@ -40,7 +40,7 @@ export default function SpendingList({ spendings, setSpendings }) {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [updatedForm]);
 
   if (loading) return <Loader />;
 
@@ -61,8 +61,26 @@ export default function SpendingList({ spendings, setSpendings }) {
         </h1>
       )}
       {spendings.length > 0 &&
-        spendings.map((spending) => (
-          <Spending key={spending.id}>
+        spendings.filter((spending) => {
+          if (currency === spending.currency) return spending; 
+          if (currency === "ALL") return spending;
+        })
+        .sort((a,b) => {
+          if (filter === '-date') {
+            return new Date(b.spent_at) - new Date(a.spent_at);
+          } else if (filter === 'date') {
+            return new Date(a.spent_at) - new Date(b.spent_at);
+          } else if (filter === '-amount_in_huf') {
+            if(b.currency === 'HUF' && a.currency !== 'HUF') return b.amount - (a.amount * 300);
+            if(b.currency !== 'HUF' && a.currency === 'HUF') return (b.amount * 300) - a.amount;
+            return b.amount - a.amount;
+          } else if (filter === 'amount_in_huf') {
+            if(a.currency === 'HUF' && b.currency !== 'HUF') return a.amount - (b.amount * 300);
+            if(a.currency !== 'HUF' && b.currency === 'HUF') return (a.amount * 300) - b.amount;
+            return a.amount - b.amount;
+          }})
+        .map((spending, idx) => (
+          <Spending key={idx}>
             <IconWrapper>
               <FiDollarSign color="var(--color-blue)" />
             </IconWrapper>
@@ -76,7 +94,7 @@ export default function SpendingList({ spendings, setSpendings }) {
             </TextWrapper>
             <AmountWrapper>
               <Amount currency={spending.currency}>
-                {(spending.amount / 100).toFixed(2)}
+                {(spending.amount / 1).toFixed(2)}
               </Amount>
             </AmountWrapper>
           </Spending>

@@ -3,7 +3,7 @@ import { InputStyles } from '../styles/InputStyles';
 import { SelectStyles } from '../styles/SelectStyles';
 import { FormStyles } from '../styles/ComponentStyles';
 
-export default function Form() {
+export default function Form({updatedForm, setUpdatedForm}) {
   const [state, setState] = useState({
     description: '',
     amount: 0,
@@ -11,6 +11,8 @@ export default function Form() {
   });
 
   function handleChange(e) {
+    document.querySelector('.description').style.border = 'none';
+    document.querySelector('.amount').style.border = 'none';
     const { name, value } = e.target;
 
     setState({
@@ -19,10 +21,38 @@ export default function Form() {
     });
   }
 
+  function handleSubmit(e) {
+    e.preventDefault();
+    if(!state.description) {
+      document.querySelector('.description').style.border = '3px solid red';
+    }
+    if(!state.amount) {
+      document.querySelector('.amount').style.border = '3px solid red';
+    }
+    if(state.description && state.amount) {
+      const reqBody = {
+        ...state,
+        spent_at: new Date(Date.now()).toISOString(),
+      }
+      fetch('http://localhost:8080/spendings/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqBody),
+      })
+      setState({
+        description: '',
+        amount: 0,
+        currency: 'USD',
+      });
+      setUpdatedForm(updatedForm+1);
+    }
+  }
+
   return (
     <>
       <FormStyles>
         <InputStyles
+          className='description'
           type='text'
           placeholder='description'
           name='description'
@@ -30,6 +60,7 @@ export default function Form() {
           onChange={handleChange}
         />
         <InputStyles
+          className='amount'
           type='number'
           placeholder='amount'
           name='amount'
@@ -44,7 +75,7 @@ export default function Form() {
           <option value='HUF'>HUF</option>
           <option value='USD'>USD</option>
         </SelectStyles>
-        <InputStyles type='submit' value='Save' />
+        <InputStyles type='submit' value='Save' onClick={handleSubmit}/>
       </FormStyles>
     </>
   );
